@@ -1,16 +1,27 @@
 module.exports = async function (context, req) {
-    context.log('JavaScript HTTP trigger function processed a request.');
 
-    if (req.query.name || (req.body && req.body.name)) {
-        context.res = {
-            // status: 200, /* Defaults to 200 */
-            body: "Hello " + (req.query.name || req.body.name)
-        };
+    switch (req.method) {
+        case "GET":
+                GET_departues();
+            break;
+        default:
+            notAllowed();
+            break;
     }
-    else {
+
+    function notAllowed() {
         context.res = {
-            status: 400,
-            body: "Please pass a name on the query string or in the request body"
+            status: 405,
+            body: "Method not allowed",
+            headers: {
+                'Content-Type': 'application/json'
+            }
         };
+        context.done();
     }
+
+    function GET_departues(){
+        
+    }
+    
 };
