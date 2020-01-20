@@ -3,7 +3,7 @@ const mongodb = require('mongodb');
 let cosmos_client = null;
 const connection_cosmosDB = process.env["connection_cosmosDB"];
 
-module.exports = async function (context, req) {
+module.exports = function (context, req) {
 
     switch (req.method) {
         case "GET":
@@ -33,7 +33,7 @@ module.exports = async function (context, req) {
             requestedKind = req.query["tipo_salida"];
         }
         if (requestedID) {
-            //Get specific entry
+            //Get specific departure
             createCosmosClient()
                 .then(function () {
                     getDeparture(requestedID)
@@ -64,7 +64,7 @@ module.exports = async function (context, req) {
                 });
         }
         else {
-            //Get entries list
+            //Get departures list
             createCosmosClient()
                 .then(function () {
                     getDepartures(requestedKind)
@@ -121,7 +121,18 @@ module.exports = async function (context, req) {
                         if (error) {
                             reject(error);
                         }
-                        resolve(docs);
+                        if (docs) {
+                            resolve(docs);
+                        }
+                        else {
+                            reject({
+                                status: 404,
+                                body: {},
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
+                        }
                     }
                 );
         });
