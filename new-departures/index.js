@@ -179,7 +179,7 @@ module.exports = function (context, req) {
 
 
                     await deleteAllControl(req.body['cabinets_id']);
-                    await updateFridgesLocation(fridges);
+                    await updateFridges(fridges);
 
                     // Create a departure base object.
                     departure = {
@@ -402,12 +402,25 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
-                                if (!docs.nuevo) {
-                                    //Not new fridge
+                                if (!docs.sucursal) {
+                                    //Not subsidiary
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'ES-026'
+                                            message: 'ES-021'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
+                                    //Not from the same subsidiary
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-021'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -430,25 +443,12 @@ module.exports = function (context, req) {
                                         return;
                                     }
                                 }
-                                if (!docs.sucursal) {
-                                    //Not subsidiary
+                                if (!docs.nuevo) {
+                                    //Not new fridge
                                     reject({
                                         status: 400,
                                         body: {
-                                            message: 'ES-021'
-                                        },
-                                        headers: {
-                                            'Content-Type': 'application / json'
-                                        }
-                                    });
-                                    return;
-                                }
-                                if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
-                                    //Not from the same subsidiary
-                                    reject({
-                                        status: 400,
-                                        body: {
-                                            message: 'ES-021'
+                                            message: 'ES-026'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
@@ -696,19 +696,20 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function updateFridgesLocation(fridges) {
+        async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
             let newValues = {
                 sucursal: null,
                 sucursal_id: null,
                 udn: null,
-                udn_id: null
+                udn_id: null,
+                nuevo:false
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];
                 while (fridgesArray.length) {
                     fridgesLocationPromises.push(
-                        updateFridgeLocation(
+                        updateFridge(
                             newValues,
                             fridgesArray.pop()['_id']
                         )
@@ -729,7 +730,7 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function updateFridgeLocation(newValues, fridgeId) {
+        async function updateFridge(newValues, fridgeId) {
             await createMongoClient();
             return new Promise(function (resolve, reject) {
                 try {
@@ -756,7 +757,7 @@ module.exports = function (context, req) {
                 }
                 catch (error) {
                     reject({
-                        
+
                         status: 500,
                         body: error,
                         headers: {
