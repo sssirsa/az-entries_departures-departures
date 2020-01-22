@@ -177,6 +177,10 @@ module.exports = function (context, req) {
                     let date = new Date();
                     let date_string = date.toISOString();
 
+
+                    await deleteAllControl(req.body['cabinets_id']);
+                    await updateFridgesLocation(fridges);
+
                     // Create a departure base object.
                     departure = {
                         descripcion: req.body.descripcion,
@@ -190,10 +194,11 @@ module.exports = function (context, req) {
                         operador_transporte: transportDriver,
                         cabinets: fridges
                     };
+                    let response = await writeDeparture();
 
                     context.res = {
                         status: 200,
-                        body: departure,
+                        body: response.ops[0],
                         headers: {
                             "Content-Type": "application/json"
                         }
@@ -308,7 +313,14 @@ module.exports = function (context, req) {
                         .findOne({ _id: mongodb.ObjectId(agencyId) },
                             function (error, docs) {
                                 if (error) {
-                                    reject(error);
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
                                 }
                                 if (!docs) {
                                     reject({
@@ -338,12 +350,13 @@ module.exports = function (context, req) {
             });
         }
         function searchAllFridges(fridgesId) {
+            let fridgesIdArray = fridgesId.slice();
             return new Promise(async function (resolve, reject) {
                 var fridgesInfoPromises = [];
-                while (fridgesId.length) {
+                while (fridgesIdArray.length) {
                     fridgesInfoPromises.push(
                         searchFridge(
-                            req.body['cabinets_id'].pop()
+                            fridgesIdArray.pop()
                         )
                     );
                 }
@@ -366,10 +379,16 @@ module.exports = function (context, req) {
                         .findOne({ economico: fridgeInventoryNumber },
                             function (error, docs) {
                                 if (error) {
-                                    reject(error);
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
                                 }
                                 //Validations
-
                                 if (!docs) {
                                     //Not found fridge
                                     reject({
@@ -381,6 +400,7 @@ module.exports = function (context, req) {
                                             'Content-Type': 'application / json'
                                         }
                                     });
+                                    return;
                                 }
                                 if (!docs.nuevo) {
                                     //Not new fridge
@@ -393,6 +413,7 @@ module.exports = function (context, req) {
                                             'Content-Type': 'application / json'
                                         }
                                     });
+                                    return;
                                 }
                                 if (docs.estatus_unilever) {
                                     if (docs.estatus_unilever['code'] !== "0001") {
@@ -406,6 +427,7 @@ module.exports = function (context, req) {
                                                 'Content-Type': 'application / json'
                                             }
                                         });
+                                        return;
                                     }
                                 }
                                 if (!docs.sucursal) {
@@ -419,6 +441,7 @@ module.exports = function (context, req) {
                                             'Content-Type': 'application / json'
                                         }
                                     });
+                                    return;
                                 }
                                 if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
                                     //Not from the same subsidiary
@@ -431,6 +454,7 @@ module.exports = function (context, req) {
                                             'Content-Type': 'application / json'
                                         }
                                     });
+                                    return;
                                 }
                                 //Resolve correctly if all validations are passed        
                                 resolve(docs);
@@ -459,7 +483,14 @@ module.exports = function (context, req) {
                         .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
                             function (error, docs) {
                                 if (error) {
-                                    reject(error);
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
                                 }
                                 if (!docs) {
                                     reject({
@@ -503,6 +534,7 @@ module.exports = function (context, req) {
                                 'Content-Type': 'application / json'
                             }
                         });
+                        return;
                     }
                     resolve(transportDriver.data);
                 }
@@ -532,6 +564,7 @@ module.exports = function (context, req) {
                                 'Content-Type': 'application / json'
                             }
                         });
+                        return;
                     }
                     resolve(transportKind.data);
                 }
@@ -547,8 +580,191 @@ module.exports = function (context, req) {
             });
 
         }
-        function deleteControl(controlId) {
-
+        async function writeDeparture() {
+            await createCosmosClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    cosmos_client
+                        .db('EntriesDepartures')
+                        .collection('Departures')
+                        .insertOne(departure, function (error, docs) {
+                            if (error) {
+                                reject({
+                                    status: 500,
+                                    body: error,
+                                    headers: {
+                                        'Content-Type': 'application / json'
+                                    }
+                                });
+                                return;
+                            }
+                            resolve(docs);
+                        });
+                }
+                catch (error) {
+                    reject({
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
+        }
+        async function deleteAllControl(fridgesId) {
+            let fridgesIdArray = fridgesId.slice();
+            return new Promise(async function (resolve, reject) {
+                var fridgesControlPromises = [];
+                while (fridgesIdArray.length) {
+                    fridgesControlPromises.push(
+                        deleteControl(
+                            fridgesIdArray.pop()
+                        )
+                    );
+                }
+                try {
+                    let fridgesArray = await Promise.all(fridgesControlPromises);
+                    resolve(fridgesArray);
+                }
+                catch (error) {
+                    reject({
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
+        }
+        async function deleteControl(fridgeInventoryNumber) {
+            await createCosmosClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    cosmos_client
+                        .db('EntriesDepartures')
+                        .collection('Control')
+                        .findOne({ cabinet_id: fridgeInventoryNumber }, function (error, docs) {
+                            if (error) {
+                                reject({
+                                    status: 500,
+                                    body: error,
+                                    headers: {
+                                        'Content-Type': 'application / json'
+                                    }
+                                });
+                                return;
+                            }
+                            if (!docs) {
+                                reject({
+                                    status: 500,
+                                    body: 'No control registry found for the fridge ' + fridgeInventoryNumber,
+                                    headers: {
+                                        'Content-Type': 'application / json'
+                                    }
+                                });
+                            }
+                            if (docs) {
+                                cosmos_client
+                                    .db('EntriesDepartures')
+                                    .collection('Control')
+                                    .deleteOne({ _id: mongodb.ObjectId(docs['_id'].toString()) }, function (error) {
+                                        if (error) {
+                                            reject({
+                                                status: 500,
+                                                body: error,
+                                                headers: {
+                                                    'Content-Type': 'application / json'
+                                                }
+                                            });
+                                            return;
+                                        }
+                                        resolve();
+                                    });
+                            }
+                        });
+                }
+                catch (error) {
+                    reject({
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
+        }
+        async function updateFridgesLocation(fridges) {
+            let fridgesArray = fridges.slice();
+            let newValues = {
+                sucursal: null,
+                sucursal_id: null,
+                udn: null,
+                udn_id: null
+            };
+            return new Promise(async function (resolve, reject) {
+                var fridgesLocationPromises = [];
+                while (fridgesArray.length) {
+                    fridgesLocationPromises.push(
+                        updateFridgeLocation(
+                            newValues,
+                            fridgesArray.pop()['_id']
+                        )
+                    );
+                }
+                try {
+                    let updatedFridgesArray = await Promise.all(fridgesLocationPromises);
+                    resolve(updatedFridgesArray);
+                }
+                catch (error) {
+                    reject({
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
+        }
+        async function updateFridgeLocation(newValues, fridgeId) {
+            await createMongoClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    mongo_client
+                        .db(MONGO_DB_NAME)
+                        .collection('fridges')
+                        .updateOne(
+                            { _id: mongodb.ObjectId(fridgeId) },
+                            { $set: newValues },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    reject({
+                        
+                        status: 500,
+                        body: error,
+                        headers: {
+                            'Content-Type': 'application / json'
+                        }
+                    });
+                }
+            });
         }
     }
 
