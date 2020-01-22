@@ -3,7 +3,11 @@ const axios = require('axios');
 const departure_kind = "Nuevos";
 //db connections
 let cosmos_client = null;
+let mongo_client = null;
 const connection_cosmosDB = process.env["connection_cosmosDB"];
+const connection_mongoDB = process.env["connection_mongoDB"];
+const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
+
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
 const inventory = process.env["INVENTORY"];
@@ -164,15 +168,14 @@ module.exports = function (context, req) {
             if (transportKindId) {
                 transportKind = await searchTransportKind(transportKindId);
             }
+            let fridges = await searchAllFridges(req.body['cabinets_id']);
 
-            let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind];
+            let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
                     let date = new Date();
                     let date_string = date.toISOString();
-
-                    let fridges = await searchAllFridges(req.body['cabinets_id']);
 
                     // Create a departure base object.
                     departure = {
@@ -198,13 +201,7 @@ module.exports = function (context, req) {
                     context.done();
                 })
                 .catch(function (error) {
-                    context.res = {
-                        status: 500,
-                        body: error,
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    };
+                    context.res = error;
                     context.done();
                 });
 
@@ -301,32 +298,42 @@ module.exports = function (context, req) {
 
         }
 
-        function searchAgency(agencyId) {
-            return new Promise(async function (resolve, reject) {
+        async function searchAgency(agencyId) {
+            await createMongoClient();
+            return new Promise(function (resolve, reject) {
                 try {
-                    var agency = await axios.get(management_1 + '/agency/' + agencyId);
-                    //Validations
-                    if (!agency.data) {
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-045'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
+                    mongo_client
+                        .db(MONGO_DB_NAME)
+                        .collection('agencies')
+                        .findOne({ _id: mongodb.ObjectId(agencyId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject(error);
+                                }
+                                if (!docs) {
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-045'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
                             }
-                        });
-                    }
-                    resolve(agency.data);
+                        );
                 }
                 catch (error) {
+                    context.log(error);
                     reject({
                         status: 500,
-                        body: error,
+                        body: error.toString(),
                         headers: {
                             "Content-Type": "application/json"
                         }
-                    });
+                    })
                 }
             });
         }
@@ -349,112 +356,135 @@ module.exports = function (context, req) {
                 }
             });
         }
-        function searchFridge(fridgeInventoryNumber) {
-            return new Promise(async function (resolve, reject) {
+        async function searchFridge(fridgeInventoryNumber) {
+            await createMongoClient();
+            return new Promise(function (resolve, reject) {
                 try {
-                    var fridge = await axios.get(inventory + '/fridge/' + fridgeInventoryNumber);
-                    //Validations
-                    if (!fridge.data) {
-                        //Not found fridge
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-046'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
-                            }
-                        });
-                    }
-                    if (!fridge.data.nuevo) {
-                        //Not new fridge
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-026'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
-                            }
-                        });
-                    }
-                    if (fridge.data.estatus_unilever) {
-                        if (fridge.data.estatus_unilever['code'] !== "0001") {
-                            //Not new fridge, improper unilever status
-                            reject({
-                                status: 400,
-                                body: {
-                                    message: 'ES-007'
-                                },
-                                headers: {
-                                    'Content-Type': 'application / json'
+                    mongo_client
+                        .db(MONGO_DB_NAME)
+                        .collection('fridges')
+                        .findOne({ economico: fridgeInventoryNumber },
+                            function (error, docs) {
+                                if (error) {
+                                    reject(error);
                                 }
-                            });
-                        }
-                    }
-                    if (!fridge.data.sucursal) {
-                        //Not subsidiary
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-021'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
+                                //Validations
+
+                                if (!docs) {
+                                    //Not found fridge
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-046'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                if (!docs.nuevo) {
+                                    //Not new fridge
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-026'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                if (docs.estatus_unilever) {
+                                    if (docs.estatus_unilever['code'] !== "0001") {
+                                        //Not new fridge, improper unilever status
+                                        reject({
+                                            status: 400,
+                                            body: {
+                                                message: 'ES-007'
+                                            },
+                                            headers: {
+                                                'Content-Type': 'application / json'
+                                            }
+                                        });
+                                    }
+                                }
+                                if (!docs.sucursal) {
+                                    //Not subsidiary
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-021'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
+                                    //Not from the same subsidiary
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-021'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                //Resolve correctly if all validations are passed        
+                                resolve(docs);
                             }
-                        });
-                    }
-                    if (fridge.data.sucursal['_id']!==originSubsidiaryId) {
-                        //Not from the same subsidiary
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-021'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
-                            }
-                        });
-                    }
-                    resolve(fridge.data);
+                        );
                 }
                 catch (error) {
+                    context.log(error);
                     reject({
                         status: 500,
-                        body: error,
+                        body: error.toString(),
                         headers: {
                             "Content-Type": "application/json"
                         }
-                    });
+                    })
                 }
             });
         }
-        function searchSubsidiary(subsidiaryId) {
-            return new Promise(async function (resolve, reject) {
+        async function searchSubsidiary(subsidiaryId) {
+            await createMongoClient();
+            return new Promise(function (resolve, reject) {
                 try {
-                    var subsidiary = await axios.get(management_1 + '/subsidiary/' + subsidiaryId);
-                    //Validations
-                    if (!subsidiary.data) {
-                        reject({
-                            status: 400,
-                            body: {
-                                message: 'ES-043'
-                            },
-                            headers: {
-                                'Content-Type': 'application / json'
+                    mongo_client
+                        .db(MONGO_DB_NAME)
+                        .collection('subsidiaries')
+                        .findOne({ _id: mongodb.ObjectId(subsidiaryId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject(error);
+                                }
+                                if (!docs) {
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-043'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
                             }
-                        });
-                    }
-                    resolve(subsidiary.data);
+                        );
                 }
                 catch (error) {
+                    context.log(error);
                     reject({
                         status: 500,
-                        body: error,
+                        body: error.toString(),
                         headers: {
                             "Content-Type": "application/json"
                         }
-                    });
+                    })
                 }
             });
         }
@@ -517,7 +547,7 @@ module.exports = function (context, req) {
             });
 
         }
-        function deleteControl(controlId){
+        function deleteControl(controlId) {
 
         }
     }
@@ -541,6 +571,23 @@ module.exports = function (context, req) {
                         reject(error);
                     }
                     cosmos_client = _cosmos_client;
+                    resolve();
+                });
+            }
+            else {
+                resolve();
+            }
+        });
+    }
+
+    function createMongoClient() {
+        return new Promise(function (resolve, reject) {
+            if (!mongo_client) {
+                mongodb.MongoClient.connect(connection_mongoDB, function (error, _mongo_client) {
+                    if (error) {
+                        reject(error);
+                    }
+                    mongo_client = _mongo_client;
                     resolve();
                 });
             }
