@@ -4,7 +4,7 @@ let mongo_client = null;
 let cosmos_client = null;
 const connection_mongoDB = process.env["connection_mongoDB"];
 const connection_cosmosDB = process.env["connection_cosmosDB"];
-const departure_kind = "Obsoletos";
+const departure_kind = "Garantías";
 
 module.exports = function (context, req) {
     switch (req.method) {
