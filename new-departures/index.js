@@ -10,8 +10,6 @@ const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
 
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
-const inventory = process.env["INVENTORY"];
-const management_1 = process.env["MANAGEMENT_1"];
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -744,7 +742,7 @@ module.exports = function (context, req) {
         }
         async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
-            let unlieverStatus = await searchUnileverStatus('0005');
+            let unlieverStatus = await searchUnileverStatus('0011');
             let newValues = {
                 sucursal: null,
                 sucursal_id: null,
