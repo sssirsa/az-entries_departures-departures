@@ -434,7 +434,7 @@ module.exports = function (context, req) {
                                         reject({
                                             status: 400,
                                             body: {
-                                                message: 'ES-007'
+                                                message: 'ES-028'
                                             },
                                             headers: {
                                                 'Content-Type': 'application / json'
@@ -580,6 +580,52 @@ module.exports = function (context, req) {
             });
 
         }
+        async function searchUnileverStatus(code) {
+            await createMongoClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    mongo_client
+                        .db(MONGO_DB_NAME)
+                        .collection('unilevers')
+                        .findOne({ _id: mongodb.ObjectId(code) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'MG-016'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
         async function writeDeparture() {
             await createCosmosClient();
             return new Promise(function (resolve, reject) {
@@ -698,12 +744,15 @@ module.exports = function (context, req) {
         }
         async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
+            let unlieverStatus = await searchUnileverStatus('0005');
             let newValues = {
                 sucursal: null,
                 sucursal_id: null,
                 udn: null,
                 udn_id: null,
-                nuevo:false
+                nuevo: false,
+                estatus_unilever: unlieverStatus,
+                estatus_unilever_id: unlieverStatus['_id']
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];
