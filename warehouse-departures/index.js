@@ -180,7 +180,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets_id']);
 
-            let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind, fridges];
+            let precedentPromises = [originAgency, originSubsidiary, destinationAgency, destinationSubsidiary, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
@@ -514,7 +514,7 @@ module.exports = function (context, req) {
                                 }
                                 if (docs.estatus_unilever) {
                                     if (docs.estatus_unilever['code'] !== "0001") {
-                                        //Not new fridge, improper unilever status
+                                        //Improper unilever status
                                         reject({
                                             status: 400,
                                             body: {
@@ -827,7 +827,7 @@ module.exports = function (context, req) {
             });
         }
         async function updateFridges(fridges) {
-            let fridgesArray = fridges.slice();            
+            let fridgesArray = fridges.slice();
             let unlieverStatus = await searchUnileverStatus('0011');
             let newValues = {
                 sucursal: null,

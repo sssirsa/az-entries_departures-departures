@@ -168,7 +168,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets_id']);
 
-            let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind, fridges];
+            let precedentPromises = [destinationSubsidiary, originAgency, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
