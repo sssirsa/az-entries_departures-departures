@@ -177,10 +177,6 @@ module.exports = function (context, req) {
                     let date = new Date();
                     let date_string = date.toISOString();
 
-
-                    await deleteAllControl(req.body['cabinets_id']);
-                    await updateFridges(fridges);
-
                     // Create a departure base object.
                     departure = {
                         descripcion: req.body.descripcion,
@@ -194,6 +190,10 @@ module.exports = function (context, req) {
                         operador_transporte: transportDriver,
                         cabinets: fridges
                     };
+                    
+                    await deleteAllControl(req.body['cabinets_id']);
+                    await updateFridges(fridges);
+
                     let response = await writeDeparture();
 
                     context.res = {
@@ -587,7 +587,7 @@ module.exports = function (context, req) {
                     mongo_client
                         .db(MONGO_DB_NAME)
                         .collection('unilevers')
-                        .findOne({ _id: mongodb.ObjectId(code) },
+                        .findOne({ code: code },
                             function (error, docs) {
                                 if (error) {
                                     reject({
