@@ -10,8 +10,6 @@ const MONGO_DB_NAME = process.env['MONGO_DB_NAME'];
 
 //URLS
 const entries_departures = process.env["ENTRIES_DEPARTURES"];
-const inventory = process.env["INVENTORY"];
-const management_1 = process.env["MANAGEMENT_1"];
 
 module.exports = function (context, req) {
     switch (req.method) {
@@ -182,7 +180,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets_id']);
 
-            let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind, fridges];
+            let precedentPromises = [originAgency, originSubsidiary, destinationAgency, destinationSubsidiary, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
@@ -516,7 +514,7 @@ module.exports = function (context, req) {
                                 }
                                 if (docs.estatus_unilever) {
                                     if (docs.estatus_unilever['code'] !== "0001") {
-                                        //Not new fridge, improper unilever status
+                                        //Improper unilever status
                                         reject({
                                             status: 400,
                                             body: {
@@ -829,8 +827,8 @@ module.exports = function (context, req) {
             });
         }
         async function updateFridges(fridges) {
-            let fridgesArray = fridges.slice();            
-            let unlieverStatus = await searchUnileverStatus('0005');
+            let fridgesArray = fridges.slice();
+            let unlieverStatus = await searchUnileverStatus('0011');
             let newValues = {
                 sucursal: null,
                 sucursal_id: null,
