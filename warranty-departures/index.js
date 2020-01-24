@@ -1,6 +1,6 @@
 const mongodb = require('mongodb');
 const axios = require('axios');
-const departure_kind = "Buen estado";
+const departure_kind = "Garantías";
 //db connections
 let cosmos_client = null;
 let mongo_client = null;
@@ -149,29 +149,17 @@ module.exports = function (context, req) {
         //TODO: Get person data trough userid and save it in the entry data
         let departure; //Base object
         var userId = null;
-        var destinationAgencyId = req.body['udn_destino_id'];
-        var destinationSubsidiaryId = req.body['sucursal_destino_id'];
         var originAgencyId = req.body['udn_origen_id'];
-        var originSubsidiaryId = req.body['sucursal_origen_id'];
+        var destinationSubsidiaryId = req.body['sucursal_destino_id'];
         var transportDriverId = req.body['operador_transporte_id'];
         var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
 
         validate();
 
         try {
-            let originAgency, originSubsidiary, destinationAgency, destinationSubsidiary, transportDriver, transportKind;
-            if (originAgencyId) {
-                originAgency = await searchAgency(originAgencyId);
-            }
-            if (originSubsidiaryId) {
-                originSubsidiary = await searchSubsidiary(originSubsidiaryId);
-            }
-            if (destinationAgencyId) {
-                destinationAgency = await searchAgency(destinationAgencyId);
-            }
-            if (destinationSubsidiaryId) {
-                destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
-            }
+            let destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
+            let originAgency = await searchAgency(originAgencyId);
+            let transportDriver, transportKind;
             if (transportDriverId) {
                 transportDriver = await searchTransportDriver(transportDriverId);
             }
@@ -180,7 +168,7 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets_id']);
 
-            let precedentPromises = [originAgency, originSubsidiary, destinationAgency, destinationSubsidiary, transportDriver, transportKind, fridges];
+            let precedentPromises = [destinationSubsidiary, originAgency, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
@@ -194,15 +182,13 @@ module.exports = function (context, req) {
                         tipo_salida: departure_kind,
                         nombre_chofer: req.body.nombre_chofer,
                         persona: null,
-                        sucursal_origen: originSubsidiary,
                         sucursal_destino: destinationSubsidiary,
                         udn_origen: originAgency,
-                        udn_destino: destinationAgency,
                         tipo_transporte: transportKind,
                         operador_transporte: transportDriver,
                         cabinets: fridges
                     };
-
+                    
                     await deleteAllControl(req.body['cabinets_id']);
                     await updateFridges(fridges);
 
@@ -231,25 +217,11 @@ module.exports = function (context, req) {
         //Internal functions
         function validate() {
             //Destination validation
-            if (!destinationAgencyId && !destinationSubsidiaryId) {
-                //at least one
+            if (!destinationSubsidiaryId) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-002'
-                    },
-                    headers: {
-                        'Content-Type': 'application / json'
-                    }
-                };
-                context.done();
-            }
-            if (destinationAgencyId && destinationSubsidiaryId) {
-                //not both
-                context.res = {
-                    status: 400,
-                    body: {
-                        message: 'ES-001'
+                        message: 'ES-013'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -259,40 +231,11 @@ module.exports = function (context, req) {
             }
 
             //Origin validation        
-            if (!originAgencyId && !originSubsidiaryId) {
-                //at least one
+            if (!originAgencyId) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-056'
-                    },
-                    headers: {
-                        'Content-Type': 'application / json'
-                    }
-                };
-                context.done();
-            }
-            if (originAgencyId && originSubsidiaryId) {
-                //not both
-                context.res = {
-                    status: 400,
-                    body: {
-                        message: 'ES-053'
-                    },
-                    headers: {
-                        'Content-Type': 'application / json'
-                    }
-                };
-                context.done();
-            }
-
-            //Cross origin and destination validation
-            if ((originAgencyId && destinationAgencyId) || (originSubsidiaryId && destinationSubsidiaryId)) {
-                //Needs to be from agency to subsidiary or from subsidiary to agency
-                context.res = {
-                    status: 400,
-                    body: {
-                        message: 'ES-060'
+                        message: 'ES-009'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -456,77 +399,48 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
-                                if (originSubsidiaryId) {
-                                    if (!docs.sucursal) {
-                                        //Not in any subsidiary
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-021'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                    if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
-                                        //Not from the same subsidiary
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-021'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
+                                if (!docs.udn) {
+                                    //Not subsidiary
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-022'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
                                 }
-                                if (originAgencyId) {
-                                    if (!docs.udn) {
-                                        //Not in any agency
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-022'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                    if (docs.udn['_id'].toString() !== originAgencyId) {
-                                        //Not from the same agency
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-022'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
+                                if (docs.udn['_id'].toString() !== originAgencyId) {
+                                    //Not from the same subsidiary
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-021'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
                                 }
-                                if (docs.estatus_unilever) {
-                                    if (docs.estatus_unilever['code'] !== "0001") {
-                                        //Improper unilever status
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-028'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                }
+                                //TODO:Implement status validation when known
+                                // if (docs.estatus_unilever) {
+                                //     if (docs.estatus_unilever['code'] !== "0001") {
+                                //         //Not new fridge, improper unilever status
+                                //         reject({
+                                //             status: 400,
+                                //             body: {
+                                //                 message: 'ES-028'
+                                //             },
+                                //             headers: {
+                                //                 'Content-Type': 'application / json'
+                                //             }
+                                //         });
+                                //         return;
+                                //     }
+                                // }
                                 if (docs.nuevo) {
                                     //Not new fridge
                                     reject({
@@ -834,6 +748,7 @@ module.exports = function (context, req) {
                 sucursal_id: null,
                 udn: null,
                 udn_id: null,
+                nuevo: false,
                 estatus_unilever: unlieverStatus,
                 estatus_unilever_id: unlieverStatus['_id']
             };
