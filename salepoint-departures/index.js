@@ -149,8 +149,6 @@ module.exports = function (context, req) {
         //TODO: Get person data trough userid and save it in the entry data
         let departure; //Base object
         var userId = null;
-        var destinationAgencyId = req.body['udn_destino_id'];
-        var destinationSubsidiaryId = req.body['sucursal_destino_id'];
         var originAgencyId = req.body['udn_origen_id'];
         var originSubsidiaryId = req.body['sucursal_origen_id'];
         var transportDriverId = req.body['operador_transporte_id'];
@@ -480,7 +478,7 @@ module.exports = function (context, req) {
                                     }
                                 }
                                 if (docs.nuevo) {
-                                    //Not new fridge
+                                    //New fridge
                                     reject({
                                         status: 400,
                                         body: {
