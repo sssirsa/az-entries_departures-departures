@@ -362,7 +362,13 @@ module.exports = function (context, req) {
                     resolve(fridgesArray);
                 }
                 catch (error) {
-                    reject(error);
+                    reject({
+                                status: 500,
+                                body: error,
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
                 }
             });
         }
@@ -832,7 +838,13 @@ module.exports = function (context, req) {
             if (!cosmos_client) {
                 mongodb.MongoClient.connect(connection_cosmosDB, function (error, _cosmos_client) {
                     if (error) {
-                        reject(error);
+                        reject({
+                                status: 500,
+                                body: error,
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
                     }
                     cosmos_client = _cosmos_client;
                     resolve();
@@ -849,7 +861,13 @@ module.exports = function (context, req) {
             if (!mongo_client) {
                 mongodb.MongoClient.connect(connection_mongoDB, function (error, _mongo_client) {
                     if (error) {
-                        reject(error);
+                        reject({
+                                status: 500,
+                                body: error,
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
                     }
                     mongo_client = _mongo_client;
                     resolve();

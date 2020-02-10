@@ -70,7 +70,13 @@ module.exports = function (context, req) {
             if (!entries_departures_client) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
-                        reject(error);
+                        reject({
+                                status: 500,
+                                body: error,
+                                headers: {
+                                    "Content-Type": "application/json"
+                                }
+                            });
                     }
                     entries_departures_client = _entries_departures_client;
                     resolve();
