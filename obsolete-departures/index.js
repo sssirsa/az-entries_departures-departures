@@ -865,7 +865,7 @@ module.exports = function (context, req) {
         }
         async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
-            let unlieverStatus = await searchUnileverStatus('0005');
+            let unlieverStatus = await searchUnileverStatus('0004');
             let newValues = {
                 sucursal: null,
                 sucursal_id: null,
