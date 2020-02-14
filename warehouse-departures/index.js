@@ -204,7 +204,7 @@ module.exports = function (context, req) {
                         cabinets: fridges
                     };
 
-                    await deleteAllControl(req.body['cabinets_id']);
+                    //await deleteAllControl(req.body['cabinets_id']);
                     await updateFridges(fridges);
 
                     let response = await writeDeparture();
