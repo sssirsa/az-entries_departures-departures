@@ -788,11 +788,9 @@ module.exports = function (context, req) {
             let unlieverStatus = await searchUnileverStatus('0005');
             let newValues = {
                 sucursal: null,
-                sucursal_id: null,
                 udn: null,
-                udn_id: null,
                 estatus_unilever: unlieverStatus,
-                estatus_unilever_id: unlieverStatus['_id']
+                fecha_ingreso: null
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];
