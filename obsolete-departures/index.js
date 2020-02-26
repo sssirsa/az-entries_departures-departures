@@ -869,7 +869,7 @@ module.exports = function (context, req) {
             let newValues = {
                 sucursal: null,
                 udn: null,
-                estatus_unilever: unlieverStatus,,
+                estatus_unilever: unlieverStatus,
                 fecha_ingreso: null
             };
             return new Promise(async function (resolve, reject) {
