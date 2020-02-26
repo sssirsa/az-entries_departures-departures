@@ -199,7 +199,7 @@ module.exports = function (context, req) {
                         cabinets: fridges
                     };
 
-                    await deleteAllControl(req.body['cabinets_id']);
+                    //await deleteAllControl(req.body['cabinets_id']);
                     await updateFridges(fridges);
 
                     let response = await writeDeparture();
@@ -868,11 +868,9 @@ module.exports = function (context, req) {
             let unlieverStatus = await searchUnileverStatus('0004');
             let newValues = {
                 sucursal: null,
-                sucursal_id: null,
                 udn: null,
-                udn_id: null,
                 estatus_unilever: unlieverStatus,
-                estatus_unilever_id: unlieverStatus['_id']
+                fecha_ingreso: null
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];

@@ -204,7 +204,7 @@ module.exports = function (context, req) {
                         cabinets: fridges
                     };
 
-                    await deleteAllControl(req.body['cabinets_id']);
+                    //await deleteAllControl(req.body['cabinets_id']);
                     await updateFridges(fridges);
 
                     let response = await writeDeparture();
@@ -421,12 +421,12 @@ module.exports = function (context, req) {
                 }
                 catch (error) {
                     reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                        status: 500,
+                        body: error,
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
                 }
             });
         }
@@ -838,11 +838,9 @@ module.exports = function (context, req) {
             let unlieverStatus = await searchUnileverStatus('0011');
             let newValues = {
                 sucursal: null,
-                sucursal_id: null,
                 udn: null,
-                udn_id: null,
                 estatus_unilever: unlieverStatus,
-                estatus_unilever_id: unlieverStatus['_id']
+                fecha_ingreso: null
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];
@@ -925,12 +923,12 @@ module.exports = function (context, req) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     entries_departures_client = _entries_departures_client;
                     resolve();
@@ -948,12 +946,12 @@ module.exports = function (context, req) {
                 mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     management_client = _management_client;
                     resolve();
