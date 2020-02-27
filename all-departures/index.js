@@ -8,7 +8,7 @@ module.exports = function (context, req) {
 
     switch (req.method) {
         case "GET":
-            GET_departues();
+            GET_departures();
             break;
         default:
             notAllowed();
@@ -26,18 +26,16 @@ module.exports = function (context, req) {
         context.done();
     }
 
-    async function GET_departues() {
+    async function GET_departures() {
         var requestedID;
-        var requestedKind;
         if (req.query) {
             requestedID = req.query["id"];
-            requestedKind = req.query["tipo_salida"];
         }
         try {
             if (requestedID) {
+                //Specific departure requested
                 let departure = await getDeparture(requestedID);
                 context.res = {
-                    status: 200,
                     body: departure,
                     headers: {
                         'Content-Type': 'application/json'
@@ -46,8 +44,8 @@ module.exports = function (context, req) {
                 context.done();
             }
             else {
-                //Get departures list
-                let departures = await getDepartures(requestedKind)
+                //return all new fridge departures
+                let departures = await getDepartures();
                 context.res = {
                     body: departures,
                     headers: {
@@ -57,11 +55,93 @@ module.exports = function (context, req) {
                 context.done();
             }
         }
-
-        catch (error) {
-            context.res = error;
+        catch (e) {
+            context.res = e;
             context.done();
         }
+
+        //Internal functions
+        async function getDeparture(id) {
+            await createEntriesDeparturesClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
+                        .collection('Departures')
+                        .findOne({ _id: mongodb.ObjectId(id) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            "Content-Type": "application/json"
+                                        }
+                                    });
+                                }
+                                if (docs) {
+                                    resolve(docs);
+                                }
+                                else {
+                                    reject({
+                                        status: 404,
+                                        body: {},
+                                        headers: {
+                                            "Content-Type": "application/json"
+                                        }
+                                    });
+                                }
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+                }
+            });
+
+        }
+
+        async function getDepartures() {
+            await createEntriesDeparturesClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    entries_departures_client
+                        .db(ENTRIES_DEPARTURES_DB_NAME)
+                        .collection('Departures')
+                        .find()
+                        .toArray(function (error, docs) {
+                            if (error) {
+                                reject({
+                                    status: 500,
+                                    body: error,
+                                    headers: {
+                                        "Content-Type": "application/json"
+                                    }
+                                });
+                            }
+                            resolve(docs)
+                        });
+                }
+                catch (error) {
+                    context.log(error);
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
+                }
+            });
+        }
+
     }
 
     //Private functions
@@ -85,62 +165,6 @@ module.exports = function (context, req) {
             else {
                 resolve();
             }
-        });
-    }
-
-    async function getDeparture(entryId) {
-        await createEntriesDeparturesClient();
-        return new Promise(function (resolve, reject) {
-            entries_departures_client
-                .db(ENTRIES_DEPARTURES_DB_NAME)
-                .collection('Departures')
-                .findOne({ _id: mongodb.ObjectId(entryId) },
-                    function (error, docs) {
-                        if (error) {
-                            reject({
-                                status: 500,
-                                body: error.toString(),
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
-                        }
-                        if (docs) {
-                            resolve(docs);
-                        }
-                        else {
-                            reject({
-                                status: 404,
-                                body: {},
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
-                        }
-                    }
-                );
-        });
-    }
-
-    async function getDepartures(query) {
-        await createEntriesDeparturesClient();
-        return new Promise(function (resolve, reject) {
-            entries_departures_client
-                .db(ENTRIES_DEPARTURES_DB_NAME)
-                .collection('Departures')
-                .find({ tipo_salida: query })
-                .toArray(function (error, docs) {
-                    if (error) {
-                        reject({
-                            status: 500,
-                            body: error.toString(),
-                            headers: {
-                                "Content-Type": "application/json"
-                            }
-                        });
-                    }
-                    resolve(docs)
-                });
         });
     }
 
