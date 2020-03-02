@@ -28,8 +28,21 @@ module.exports = function (context, req) {
 
     async function GET_departures() {
         var requestedID;
+        var query;
         if (req.query) {
             requestedID = req.query["id"];
+            if (req.query["tipo_salida"]) {
+                if (!query) {
+                    query = {};
+                }
+                query["tipo_salida"] = req.query["tipo_salida"];
+            }
+            if (req.query["economico"]) {
+                if (!query) {
+                    query = {};
+                }
+                query["cabinets.economico"] = req.query["economico"];
+            }
         }
         try {
             if (requestedID) {
@@ -45,7 +58,7 @@ module.exports = function (context, req) {
             }
             else {
                 //return all new fridge departures
-                let departures = await getDepartures();
+                let departures = await getDepartures(query);
                 context.res = {
                     body: departures,
                     headers: {
@@ -108,14 +121,14 @@ module.exports = function (context, req) {
 
         }
 
-        async function getDepartures() {
+        async function getDepartures(query) {
             await createEntriesDeparturesClient();
             return new Promise(function (resolve, reject) {
                 try {
                     entries_departures_client
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Departures')
-                        .find()
+                        .find(query)
                         .sort({ fecha_hora: -1 })
                         .toArray(function (error, docs) {
                             if (error) {
