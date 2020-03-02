@@ -118,6 +118,7 @@ module.exports = function (context, req) {
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Departures')
                         .find(query)
+                        .sort({ fecha_hora: -1 })
                         .toArray(function (error, docs) {
                             if (error) {
                                 reject({
@@ -186,12 +187,11 @@ module.exports = function (context, req) {
             Promise.all(precedentPromises)
                 .then(async function () {
                     let date = new Date();
-                    let date_string = date.toISOString();
 
                     // Create a departure base object.
                     departure = {
                         descripcion: req.body.descripcion,
-                        fecha_hora: date_string,
+                        fecha_hora: date,
                         tipo_salida: departure_kind,
                         nombre_chofer: req.body.nombre_chofer,
                         persona: null,
