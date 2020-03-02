@@ -116,6 +116,7 @@ module.exports = function (context, req) {
                         .db(ENTRIES_DEPARTURES_DB_NAME)
                         .collection('Departures')
                         .find()
+                        .sort({ fecha_hora: -1 })
                         .toArray(function (error, docs) {
                             if (error) {
                                 reject({
