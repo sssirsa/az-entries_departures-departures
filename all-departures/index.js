@@ -43,6 +43,25 @@ module.exports = function (context, req) {
                 }
                 query["cabinets.economico"] = req.query["economico"];
             }
+            if (req.query['fecha_inicio'] || req.query['fecha_fin']) {
+                if (!query) {
+                    query = {};
+                }
+                var fecha_hora;
+                if (req.query['fecha_inicio']) {
+                    if (!fecha_hora) {
+                        fecha_hora = {};
+                    }
+                    fecha_hora['$gte'] = new Date(new Date(req.query['fecha_inicio']).setHours(00, 00, 00));
+                }
+                if (req.query['fecha_fin']) {
+                    if (!fecha_hora) {
+                        fecha_hora = {};
+                    }
+                    fecha_hora['$lte'] = new Date(new Date(req.query['fecha_fin']).setHours(23, 59, 59));
+                }
+                query['fecha_hora'] = fecha_hora;
+            }
         }
         try {
             if (requestedID) {
