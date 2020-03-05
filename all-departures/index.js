@@ -61,6 +61,18 @@ module.exports = function (context, req) {
                     fecha_hora['$lte'] = new Date(new Date(req.query['fecha_fin']).setHours(23, 59, 59));
                 }
                 query['fecha_hora'] = fecha_hora;
+            }            
+            if (req.query['sucursal']) {
+                if (!query) {
+                    query = {};
+                }
+                query['sucursal_origen._id'] = mongodb.ObjectId(req.query['sucursal']);
+            }            
+            if (req.query['udn']) {
+                if (!query) {
+                    query = {};
+                }
+                query['udn_origen._id'] = mongodb.ObjectId(req.query['udn']);
             }
         }
         try {
@@ -149,7 +161,8 @@ module.exports = function (context, req) {
                         .collection('Departures')
                         .find(query)
                         .sort({ fecha_hora: -1 })
-                        .toArray(function (error, docs) {
+                        .toArray(function (error, docs) 
+                        {
                             if (error) {
                                 reject({
                                     status: 500,
