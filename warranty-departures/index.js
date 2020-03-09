@@ -189,7 +189,7 @@ module.exports = function (context, req) {
                         operador_transporte: transportDriver,
                         cabinets: fridges
                     };
-                    
+
                     //await deleteAllControl(req.body['cabinets_id']);
                     await updateFridges(fridges);
 
@@ -364,12 +364,12 @@ module.exports = function (context, req) {
                 }
                 catch (error) {
                     reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                        status: 500,
+                        body: error,
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
                 }
             });
         }
@@ -432,22 +432,24 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
-                                //TODO:Implement status validation when known
-                                // if (docs.estatus_unilever) {
-                                //     if (docs.estatus_unilever['code'] !== "0001") {
-                                //         //Not new fridge, improper unilever status
-                                //         reject({
-                                //             status: 400,
-                                //             body: {
-                                //                 message: 'ES-028'
-                                //             },
-                                //             headers: {
-                                //                 'Content-Type': 'application / json'
-                                //             }
-                                //         });
-                                //         return;
-                                //     }
-                                // }
+                                if (docs.estatus_unilever) {
+                                    if (
+                                        docs.estatus_unilever['code'] !== "0007"
+                                        || docs.estatus_unilever['code'] !== "0003"
+                                    ) {
+                                        //Not new fridge, improper unilever status
+                                        reject({
+                                            status: 400,
+                                            body: {
+                                                message: 'ES-028'
+                                            },
+                                            headers: {
+                                                'Content-Type': 'application / json'
+                                            }
+                                        });
+                                        return;
+                                    }
+                                }
                                 if (docs.nuevo) {
                                     //Not new fridge
                                     reject({
@@ -840,12 +842,12 @@ module.exports = function (context, req) {
                 mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     entries_departures_client = _entries_departures_client;
                     resolve();
@@ -863,12 +865,12 @@ module.exports = function (context, req) {
                 mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     management_client = _management_client;
                     resolve();
