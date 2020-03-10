@@ -534,19 +534,19 @@ module.exports = function (context, req) {
                                         return;
                                     }
                                 }
-                                if (docs.nuevo) {
-                                    //Not new fridge
-                                    reject({
-                                        status: 400,
-                                        body: {
-                                            message: 'ES-059'
-                                        },
-                                        headers: {
-                                            'Content-Type': 'application / json'
-                                        }
-                                    });
-                                    return;
-                                }
+                                // if (docs.nuevo) {
+                                //     //Not new fridge
+                                //     reject({
+                                //         status: 400,
+                                //         body: {
+                                //             message: 'ES-059'
+                                //         },
+                                //         headers: {
+                                //             'Content-Type': 'application / json'
+                                //         }
+                                //     });
+                                //     return;
+                                // }
                                 //Resolve correctly if all validations are passed        
                                 resolve(docs);
                             }
