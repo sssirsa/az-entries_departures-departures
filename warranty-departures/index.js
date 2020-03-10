@@ -151,10 +151,10 @@ module.exports = function (context, req) {
         //TODO: Get person data trough userid and save it in the entry data
         let departure; //Base object
         var userId = null;
-        var originAgencyId = req.body['udn_origen_id'];
-        var destinationSubsidiaryId = req.body['sucursal_destino_id'];
-        var transportDriverId = req.body['operador_transporte_id'];
-        var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
+        var originAgencyId = req.body['udn_origen'];
+        var destinationSubsidiaryId = req.body['sucursal_destino'];
+        var transportDriverId = req.body['operador_transporte'];
+        var transportKindId = req.body['tipo_transporte']; //Non mandatory
 
         validate();
 
@@ -168,7 +168,7 @@ module.exports = function (context, req) {
             if (transportKindId) {
                 transportKind = await searchTransportKind(transportKindId);
             }
-            let fridges = await searchAllFridges(req.body['cabinets_id']);
+            let fridges = await searchAllFridges(req.body['cabinets']);
 
             let precedentPromises = [destinationSubsidiary, originAgency, transportDriver, transportKind, fridges];
 
@@ -246,7 +246,7 @@ module.exports = function (context, req) {
             }
 
             //Fridge array validation
-            if (!req.body.cabinets_id) {
+            if (!req.body.cabinets) {
                 //No array
                 context.res = {
                     status: 400,
@@ -259,7 +259,7 @@ module.exports = function (context, req) {
                 };
                 context.done();
             }
-            if (req.body.cabinets_id.length === 0) {
+            if (req.body.cabinets.length === 0) {
                 //Empty array
                 context.res = {
                     status: 400,
@@ -754,12 +754,10 @@ module.exports = function (context, req) {
             let unlieverStatus = await searchUnileverStatus('0011');
             let newValues = {
                 sucursal: null,
-                sucursal_id: null,
                 udn: null,
-                udn_id: null,
                 nuevo: false,
                 estatus_unilever: unlieverStatus,
-                estatus_unilever_id: unlieverStatus['_id']
+                fecha_ingreso: null
             };
             return new Promise(async function (resolve, reject) {
                 var fridgesLocationPromises = [];
