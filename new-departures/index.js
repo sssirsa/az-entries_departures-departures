@@ -151,10 +151,10 @@ module.exports = function (context, req) {
         //TODO: Get person data trough userid and save it in the entry data
         let departure; //Base object
         var userId = null;
-        var destinationAgencyId = req.body['udn_destino_id'];
-        var originSubsidiaryId = req.body['sucursal_origen_id'];
-        var transportDriverId = req.body['operador_transporte_id'];
-        var transportKindId = req.body['tipo_transporte_id']; //Non mandatory
+        var destinationAgencyId = req.body['udn_destino'];
+        var originSubsidiaryId = req.body['sucursal_origen'];
+        var transportDriverId = req.body['operador_transporte'];
+        var transportKindId = req.body['tipo_transporte']; //Non mandatory
 
         validate();
 
@@ -168,7 +168,7 @@ module.exports = function (context, req) {
             if (transportKindId) {
                 transportKind = await searchTransportKind(transportKindId);
             }
-            let fridges = await searchAllFridges(req.body['cabinets_id']);
+            let fridges = await searchAllFridges(req.body['cabinets']);
 
             let precedentPromises = [originSubsidiary, destinationAgency, transportDriver, transportKind, fridges];
 
@@ -190,7 +190,7 @@ module.exports = function (context, req) {
                         cabinets: fridges
                     };
                     
-                    //await deleteAllControl(req.body['cabinets_id']);
+                    //await deleteAllControl(req.body['cabinets']);
                     await updateFridges(fridges);
 
                     let response = await writeDeparture();
@@ -247,7 +247,7 @@ module.exports = function (context, req) {
             }
 
             //Fridge array validation
-            if (!req.body.cabinets_id) {
+            if (!req.body.cabinets) {
                 //No array
                 context.res = {
                     status: 400,
@@ -260,7 +260,7 @@ module.exports = function (context, req) {
                 };
                 context.done();
             }
-            if (req.body.cabinets_id.length === 0) {
+            if (req.body.cabinets.length === 0) {
                 //Empty array
                 context.res = {
                     status: 400,
