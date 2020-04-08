@@ -469,8 +469,9 @@ module.exports = function (context, req) {
                                         return;
                                     }
                                 }
+                                let validUnileverStatuses = ["0001", "0003"];
                                 if (docs.estatus_unilever) {
-                                    if (docs.estatus_unilever['code'] !== "0001") {
+                                    if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
                                         //Improper unilever status
                                         reject({
                                             status: 400,
