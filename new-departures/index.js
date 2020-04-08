@@ -435,7 +435,7 @@ module.exports = function (context, req) {
                                 }
                                 let validUnileverStatuses = ["0001"];
                                 if (docs.estatus_unilever) {
-                                    if (!validUnileverStatuses.contains(docs.estatus_unilever['code'])) {
+                                    if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
                                         //Improper unilever status
                                         reject({
                                             status: 400,
