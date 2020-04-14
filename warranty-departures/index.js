@@ -152,7 +152,9 @@ module.exports = function (context, req) {
         let departure; //Base object
         var userId = null;
         var originAgencyId = req.body['udn_origen'];
+        var originSubsidiaryId = req.body['sucursal_origen'];
         var destinationSubsidiaryId = req.body['sucursal_destino'];
+        var destinationProviderId = req.body['proveedor_destino'];
         var transportDriverId = req.body['operador_transporte'];
         var transportKindId = req.body['tipo_transporte']; //Non mandatory
 
@@ -218,11 +220,27 @@ module.exports = function (context, req) {
         //Internal functions
         function validate() {
             //Destination validation
-            if (!destinationSubsidiaryId) {
+            //At least one
+            if (!destinationSubsidiaryId && !destinationProviderId) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-013'
+                        message: 'ES-072',
+                        detail:'One of the following destination fields are required: [“sucursal_destino”, “proveedor_destino”]'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
+            //Not both
+            if (destinationSubsidiaryId && destinationProviderId) {
+                context.res = {
+                    status: 400,
+                    body: {
+                        message: 'ES-071',
+                        detail:'The following fields can not be sent together because they are mutual excluding: [“sucursal_destino”, “proveedor_destino”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -231,12 +249,28 @@ module.exports = function (context, req) {
                 context.done();
             }
 
-            //Origin validation        
-            if (!originAgencyId) {
+            //Origin validation  
+            //At least one      
+            if (!originAgencyId && !originSubsidiaryId) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-009'
+                        message: 'ES-002',
+                        detail:'One of the following origin fields are required: [“sucursal_origen”, “udn_origen”]'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
+            //Not both
+            if (originAgencyId && originSubsidiaryId) {
+                context.res = {
+                    status: 400,
+                    body: {
+                        message: 'ES-001',
+                        detail:'The following fields can not be sent together because they are mutual excluding: [“sucursal_origen”, “udn_origen”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -251,7 +285,8 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        message: 'ES-003',
+                        detail:'The fridges array was not sent'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -264,7 +299,8 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        message: 'ES-003',
+                        detail:'The fridges array has a length of 0'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -407,7 +443,7 @@ module.exports = function (context, req) {
                                     return;
                                 }
                                 if (!docs.udn) {
-                                    //Not subsidiary
+                                    //Not agency
                                     reject({
                                         status: 400,
                                         body: {
@@ -420,7 +456,7 @@ module.exports = function (context, req) {
                                     return;
                                 }
                                 if (docs.udn['_id'].toString() !== originAgencyId) {
-                                    //Not from the same subsidiary
+                                    //Not from the same agency
                                     reject({
                                         status: 400,
                                         body: {
@@ -449,7 +485,7 @@ module.exports = function (context, req) {
                                     }
                                 }
                                 if (docs.nuevo) {
-                                    //Not new fridge
+                                    //New fridge
                                     reject({
                                         status: 400,
                                         body: {
@@ -467,7 +503,6 @@ module.exports = function (context, req) {
                         );
                 }
                 catch (error) {
-                    context.log(error);
                     reject({
                         status: 500,
                         body: error.toString(),
@@ -663,90 +698,90 @@ module.exports = function (context, req) {
                 }
             });
         }
-        async function deleteAllControl(fridgesId) {
-            let fridgesIdArray = fridgesId.slice();
-            return new Promise(async function (resolve, reject) {
-                var fridgesControlPromises = [];
-                while (fridgesIdArray.length) {
-                    fridgesControlPromises.push(
-                        deleteControl(
-                            fridgesIdArray.pop()
-                        )
-                    );
-                }
-                try {
-                    let fridgesArray = await Promise.all(fridgesControlPromises);
-                    resolve(fridgesArray);
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function deleteControl(fridgeInventoryNumber) {
-            await createEntriesDeparturesClient();
-            return new Promise(function (resolve, reject) {
-                try {
-                    entries_departures_client
-                        .db(ENTRIES_DEPARTURES_DB_NAME)
-                        .collection('Control')
-                        .findOne({ cabinet_id: fridgeInventoryNumber }, function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                                return;
-                            }
-                            if (!docs) {
-                                reject({
-                                    status: 500,
-                                    body: 'No control registry found for the fridge ' + fridgeInventoryNumber,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                            }
-                            if (docs) {
-                                entries_departures_client
-                                    .db(ENTRIES_DEPARTURES_DB_NAME)
-                                    .collection('Control')
-                                    .deleteOne({ _id: mongodb.ObjectId(docs['_id'].toString()) }, function (error) {
-                                        if (error) {
-                                            reject({
-                                                status: 500,
-                                                body: error,
-                                                headers: {
-                                                    'Content-Type': 'application / json'
-                                                }
-                                            });
-                                            return;
-                                        }
-                                        resolve();
-                                    });
-                            }
-                        });
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
+        // async function deleteAllControl(fridgesId) {
+        //     let fridgesIdArray = fridgesId.slice();
+        //     return new Promise(async function (resolve, reject) {
+        //         var fridgesControlPromises = [];
+        //         while (fridgesIdArray.length) {
+        //             fridgesControlPromises.push(
+        //                 deleteControl(
+        //                     fridgesIdArray.pop()
+        //                 )
+        //             );
+        //         }
+        //         try {
+        //             let fridgesArray = await Promise.all(fridgesControlPromises);
+        //             resolve(fridgesArray);
+        //         }
+        //         catch (error) {
+        //             reject({
+        //                 status: 500,
+        //                 body: error,
+        //                 headers: {
+        //                     'Content-Type': 'application / json'
+        //                 }
+        //             });
+        //         }
+        //     });
+        // }
+        // async function deleteControl(fridgeInventoryNumber) {
+        //     await createEntriesDeparturesClient();
+        //     return new Promise(function (resolve, reject) {
+        //         try {
+        //             entries_departures_client
+        //                 .db(ENTRIES_DEPARTURES_DB_NAME)
+        //                 .collection('Control')
+        //                 .findOne({ cabinet_id: fridgeInventoryNumber }, function (error, docs) {
+        //                     if (error) {
+        //                         reject({
+        //                             status: 500,
+        //                             body: error,
+        //                             headers: {
+        //                                 'Content-Type': 'application / json'
+        //                             }
+        //                         });
+        //                         return;
+        //                     }
+        //                     if (!docs) {
+        //                         reject({
+        //                             status: 500,
+        //                             body: 'No control registry found for the fridge ' + fridgeInventoryNumber,
+        //                             headers: {
+        //                                 'Content-Type': 'application / json'
+        //                             }
+        //                         });
+        //                     }
+        //                     if (docs) {
+        //                         entries_departures_client
+        //                             .db(ENTRIES_DEPARTURES_DB_NAME)
+        //                             .collection('Control')
+        //                             .deleteOne({ _id: mongodb.ObjectId(docs['_id'].toString()) }, function (error) {
+        //                                 if (error) {
+        //                                     reject({
+        //                                         status: 500,
+        //                                         body: error,
+        //                                         headers: {
+        //                                             'Content-Type': 'application / json'
+        //                                         }
+        //                                     });
+        //                                     return;
+        //                                 }
+        //                                 resolve();
+        //                             });
+        //                     }
+        //                 });
+        //         }
+        //         catch (error) {
+        //             reject({
+        //                 status: 500,
+        //                 body: error,
+        //                 headers: {
+        //                     'Content-Type': 'application / json'
+        //                 }
+        //             });
+        //         }
+        //     });
+        // }
         async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
             let unlieverStatus = await searchUnileverStatus('0011');
