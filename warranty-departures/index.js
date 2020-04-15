@@ -298,6 +298,21 @@ module.exports = function (context, req) {
                 context.done();
             }
 
+            //Movement validation
+            if(originSubsidiaryId&&destinationSubsidiaryId){
+                context.res = {
+                    status: 400,
+                    body: {
+                        message: 'ES-073',
+                        detail: 'Attempted to do a subsidiary chnage'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
+
             //Fridge array validation
             if (!req.body.cabinets) {
                 //No array
