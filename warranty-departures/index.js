@@ -1,6 +1,6 @@
 const mongodb = require('mongodb');
 const axios = require('axios');
-const departure_kind = "Garantías";
+//const departure_kind = "Garantías";
 //db connections
 let entries_departures_client = null;
 let management_client = null;
@@ -161,9 +161,19 @@ module.exports = function (context, req) {
         validate();
 
         try {
-            let destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
-            let originAgency = await searchAgency(originAgencyId);
-            let transportDriver, transportKind;
+            let originAgency, originSubsidiary, destinationSubsidiary, destinationProvider, transportDriver, transportKind;
+            if (destinationSubsidiaryId) {
+                destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
+            }
+            if (destinationProviderId) {
+                destinationProvider = await searchProvider(destinationProviderId);
+            }
+            if (originAgencyId) {
+                originAgency = await searchAgency(originAgencyId);
+            }
+            if (originSubsidiaryId) {
+                originSubsidiary = await searchSubsidiary(originSubsidiaryId);
+            }
             if (transportDriverId) {
                 transportDriver = await searchTransportDriver(transportDriverId);
             }
@@ -172,12 +182,19 @@ module.exports = function (context, req) {
             }
             let fridges = await searchAllFridges(req.body['cabinets']);
 
-            let precedentPromises = [destinationSubsidiary, originAgency, transportDriver, transportKind, fridges];
+            let precedentPromises = [destinationSubsidiary, destinationProvider, originAgency, originSubsidiary, transportDriver, transportKind, fridges];
 
             Promise.all(precedentPromises)
                 .then(async function () {
                     let date = new Date();
-
+                    let departure_kind;
+                    //Determining sub kind of departure
+                    if(destinationSubsidiaryId){
+                        departure_kind='Garantías';
+                    }
+                    if(destinationProviderId){
+                        departure_kind='Garantías proveedor';
+                    }
                     // Create a departure base object.
                     departure = {
                         descripcion: req.body.descripcion,
@@ -185,7 +202,9 @@ module.exports = function (context, req) {
                         tipo_salida: departure_kind,
                         nombre_chofer: req.body.nombre_chofer,
                         persona: null,
+                        proveedor_destino: destinationProvider,
                         sucursal_destino: destinationSubsidiary,
+                        sucursal_origen: originSubsidiary,
                         udn_origen: originAgency,
                         tipo_transporte: transportKind,
                         operador_transporte: transportDriver,
@@ -226,7 +245,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-072',
-                        detail:'One of the following destination fields are required: [“sucursal_destino”, “proveedor_destino”]'
+                        detail: 'One of the following destination fields are required: [“sucursal_destino”, “proveedor_destino”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -240,7 +259,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-071',
-                        detail:'The following fields can not be sent together because they are mutual excluding: [“sucursal_destino”, “proveedor_destino”]'
+                        detail: 'The following fields can not be sent together because they are mutual excluding: [“sucursal_destino”, “proveedor_destino”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -256,7 +275,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-002',
-                        detail:'One of the following origin fields are required: [“sucursal_origen”, “udn_origen”]'
+                        detail: 'One of the following origin fields are required: [“sucursal_origen”, “udn_origen”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -270,7 +289,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-001',
-                        detail:'The following fields can not be sent together because they are mutual excluding: [“sucursal_origen”, “udn_origen”]'
+                        detail: 'The following fields can not be sent together because they are mutual excluding: [“sucursal_origen”, “udn_origen”]'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -286,7 +305,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-003',
-                        detail:'The fridges array was not sent'
+                        detail: 'The fridges array was not sent'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -300,7 +319,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-003',
-                        detail:'The fridges array has a length of 0'
+                        detail: 'The fridges array has a length of 0'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -410,8 +429,8 @@ module.exports = function (context, req) {
             });
         }
         async function searchFridge(fridgeInventoryNumber) {
-            await createManagementClient();
             return new Promise(function (resolve, reject) {
+                await createManagementClient();
                 try {
                     management_client
                         .db(MANAGEMENT_DB_NAME)
@@ -455,20 +474,50 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
-                                if (docs.udn['_id'].toString() !== originAgencyId) {
-                                    //Not from the same agency
-                                    reject({
+                                if (docs['establecimiento']) {
+                                    //Fridge is in a store
+                                    err = {
                                         status: 400,
                                         body: {
-                                            message: 'ES-021'
+                                            message: 'ES-005'
                                         },
                                         headers: {
                                             'Content-Type': 'application / json'
                                         }
-                                    });
-                                    return;
+                                    };
+                                    reject(err);
                                 }
-                                let validUnileverStatuses = ["0001", "0003", "0007"];
+                                if (docs['sucursal'] || docs['udn']) {
+                                    if (docs['sucursal']) {
+                                        if (docs.sucursal['_id'].toString() !== originSubsidiaryId) {
+                                            err = {
+                                                status: 400,
+                                                body: {
+                                                    message: 'ES-021'
+                                                },
+                                                headers: {
+                                                    'Content-Type': 'application / json'
+                                                }
+                                            };
+                                            reject(err);
+                                        }
+                                    }
+                                    if (docs['udn']) {
+                                        if (docs.udn['_id'].toString() !== originAgencyId) {
+                                            err = {
+                                                status: 400,
+                                                body: {
+                                                    message: 'ES-022'
+                                                },
+                                                headers: {
+                                                    'Content-Type': 'application / json'
+                                                }
+                                            };
+                                            reject(err);
+                                        }
+                                    }
+                                }
+                                let validUnileverStatuses = ["0001", "0003", "0007", "0008"];
                                 if (docs.estatus_unilever) {
                                     if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
                                         //Improper unilever status
