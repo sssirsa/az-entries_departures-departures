@@ -194,7 +194,10 @@ module.exports = function (context, req) {
     function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
-                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _entries_departures_client) {
                     if (error) {
                         reject({
                                 status: 500,
