@@ -950,7 +950,10 @@ module.exports = function (context, req) {
     function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
-                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _entries_departures_client) {
                     if (error) {
                         reject({
                                 status: 500,
@@ -973,7 +976,10 @@ module.exports = function (context, req) {
     function createManagementClient() {
         return new Promise(function (resolve, reject) {
             if (!management_client) {
-                mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
+                mongodb.MongoClient.connect(connection_Management, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _management_client) {
                     if (error) {
                         reject({
                                 status: 500,

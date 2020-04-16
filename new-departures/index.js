@@ -189,7 +189,7 @@ module.exports = function (context, req) {
                         operador_transporte: transportDriver,
                         cabinets: fridges
                     };
-                    
+
                     //await deleteAllControl(req.body['cabinets']);
                     await updateFridges(fridges);
 
@@ -365,12 +365,12 @@ module.exports = function (context, req) {
                 }
                 catch (error) {
                     reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                        status: 500,
+                        body: error,
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    });
                 }
             });
         }
@@ -836,15 +836,18 @@ module.exports = function (context, req) {
     function createEntriesDeparturesClient() {
         return new Promise(function (resolve, reject) {
             if (!entries_departures_client) {
-                mongodb.MongoClient.connect(connection_EntriesDepartures, function (error, _entries_departures_client) {
+                mongodb.MongoClient.connect(connection_EntriesDepartures, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _entries_departures_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     entries_departures_client = _entries_departures_client;
                     resolve();
@@ -859,15 +862,18 @@ module.exports = function (context, req) {
     function createManagementClient() {
         return new Promise(function (resolve, reject) {
             if (!management_client) {
-                mongodb.MongoClient.connect(connection_Management, function (error, _management_client) {
+                mongodb.MongoClient.connect(connection_Management, {
+                    useNewUrlParser: true,
+                    useUnifiedTopology: true
+                }, function (error, _management_client) {
                     if (error) {
                         reject({
-                                status: 500,
-                                body: error,
-                                headers: {
-                                    "Content-Type": "application/json"
-                                }
-                            });
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
                     }
                     management_client = _management_client;
                     resolve();
