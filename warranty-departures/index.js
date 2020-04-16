@@ -166,7 +166,7 @@ module.exports = function (context, req) {
                 destinationSubsidiary = await searchSubsidiary(destinationSubsidiaryId);
             }
             if (destinationProviderId) {
-                destinationProvider = await searchProvider(destinationProviderId);
+                destinationProvider = await searchFridgeBrand(destinationProviderId);
             }
             if (originAgencyId) {
                 originAgency = await searchAgency(originAgencyId);
@@ -189,11 +189,11 @@ module.exports = function (context, req) {
                     let date = new Date();
                     let departure_kind;
                     //Determining sub kind of departure
-                    if(destinationSubsidiaryId){
-                        departure_kind='Garantías';
+                    if (destinationSubsidiaryId) {
+                        departure_kind = 'Garantías';
                     }
-                    if(destinationProviderId){
-                        departure_kind='Garantías proveedor';
+                    if (destinationProviderId) {
+                        departure_kind = 'Garantías proveedor';
                     }
                     // Create a departure base object.
                     departure = {
@@ -299,7 +299,7 @@ module.exports = function (context, req) {
             }
 
             //Movement validation
-            if(originSubsidiaryId&&destinationSubsidiaryId){
+            if (originSubsidiaryId && destinationSubsidiaryId) {
                 context.res = {
                     status: 400,
                     body: {
@@ -370,7 +370,6 @@ module.exports = function (context, req) {
             }
 
         }
-
         async function searchAgency(agencyId) {
             await createManagementClient();
             return new Promise(function (resolve, reject) {
@@ -433,18 +432,23 @@ module.exports = function (context, req) {
                     resolve(fridgesArray);
                 }
                 catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            "Content-Type": "application/json"
-                        }
-                    });
+                    if (error.status) {
+                        reject(error);
+                    }
+                    else {
+                        reject({
+                            status: 500,
+                            body: error,
+                            headers: {
+                                "Content-Type": "application/json"
+                            }
+                        });
+                    }
                 }
             });
         }
         async function searchFridge(fridgeInventoryNumber) {
-            return new Promise(function (resolve, reject) {
+            return new Promise(async function (resolve, reject) {
                 await createManagementClient();
                 try {
                     management_client
@@ -476,19 +480,6 @@ module.exports = function (context, req) {
                                     });
                                     return;
                                 }
-                                if (!docs.udn) {
-                                    //Not agency
-                                    reject({
-                                        status: 400,
-                                        body: {
-                                            message: 'ES-022'
-                                        },
-                                        headers: {
-                                            'Content-Type': 'application / json'
-                                        }
-                                    });
-                                    return;
-                                }
                                 if (docs['establecimiento']) {
                                     //Fridge is in a store
                                     err = {
@@ -501,6 +492,7 @@ module.exports = function (context, req) {
                                         }
                                     };
                                     reject(err);
+                                    return;
                                 }
                                 if (docs['sucursal'] || docs['udn']) {
                                     if (docs['sucursal']) {
@@ -515,6 +507,7 @@ module.exports = function (context, req) {
                                                 }
                                             };
                                             reject(err);
+                                            return;
                                         }
                                     }
                                     if (docs['udn']) {
@@ -529,6 +522,7 @@ module.exports = function (context, req) {
                                                 }
                                             };
                                             reject(err);
+                                            return;
                                         }
                                     }
                                 }
@@ -567,6 +561,53 @@ module.exports = function (context, req) {
                         );
                 }
                 catch (error) {
+                    reject({
+                        status: 500,
+                        body: error.toString(),
+                        headers: {
+                            "Content-Type": "application/json"
+                        }
+                    })
+                }
+            });
+        }
+        async function searchFridgeBrand(fridgeBrandId) {
+            //Known as destination provider
+            await createManagementClient();
+            return new Promise(function (resolve, reject) {
+                try {
+                    management_client
+                        .db(MANAGEMENT_DB_NAME)
+                        .collection('fridgebrands')
+                        .findOne({ _id: mongodb.ObjectID(fridgeBrandId) },
+                            function (error, docs) {
+                                if (error) {
+                                    reject({
+                                        status: 500,
+                                        body: error,
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                    return;
+                                }
+                                if (!docs) {
+                                    reject({
+                                        status: 400,
+                                        body: {
+                                            message: 'ES-051'
+                                        },
+                                        headers: {
+                                            'Content-Type': 'application / json'
+                                        }
+                                    });
+                                }
+                                resolve(docs);
+                            }
+                        );
+                }
+                catch (error) {
+                    context.log(error);
                     reject({
                         status: 500,
                         body: error.toString(),
