@@ -229,7 +229,7 @@ module.exports = function (context, req) {
                     status: 400,
                     body: {
                         message: 'ES-074',
-                        detail:'The “description” field is mandatory in this departure kind'
+                        detail:'The “descripcion” field is mandatory in this departure kind'
                     },
                     headers: {
                         'Content-Type': 'application / json'
