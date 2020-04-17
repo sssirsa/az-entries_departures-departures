@@ -222,7 +222,21 @@ module.exports = function (context, req) {
         //Internal functions
         function validate() {
             //Destination validation
-            //No destination validation for salepoint departures
+            //No destination validation for lease departures
+            //Description is mandatory in this departure
+            if(!req.body.descripcion){
+                context.res = {
+                    status: 400,
+                    body: {
+                        message: 'ES-074',
+                        detail:'The “description” field is mandatory in this departure kind'
+                    },
+                    headers: {
+                        'Content-Type': 'application / json'
+                    }
+                };
+                context.done();
+            }
 
             //Origin validation        
             if (!originAgencyId && !originSubsidiaryId) {
