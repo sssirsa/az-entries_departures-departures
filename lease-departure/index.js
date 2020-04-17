@@ -483,7 +483,7 @@ module.exports = function (context, req) {
                                         return;
                                     }
                                 }
-                                let validUnileverStatuses = ["0001", "0003"];
+                                let validUnileverStatuses = ["0001", "0003", "0007", "0008"];
                                 if (docs.estatus_unilever) {
                                     if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
                                         //Improper unilever status
@@ -800,7 +800,7 @@ module.exports = function (context, req) {
         }
         async function updateFridges(fridges) {
             let fridgesArray = fridges.slice();
-            let unlieverStatus = await searchUnileverStatus('0005');
+            let unlieverStatus = await searchUnileverStatus('0010');
             let newValues = {
                 sucursal: null,
                 udn: null,
