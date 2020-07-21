@@ -228,8 +228,8 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-074',
-                        detail:'The “descripcion” field is mandatory in this departure kind'
+                        code: 'ES-074',
+                        message:'The “descripcion” field is mandatory in this departure kind'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -244,7 +244,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-056'
+                        code: 'ES-056'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -257,7 +257,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-053'
+                        code: 'ES-053'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -272,7 +272,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        code: 'ES-003'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -285,7 +285,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-003'
+                        code: 'ES-003'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -299,7 +299,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-047'
+                        code: 'ES-047'
                     },
                     headers: {
                         'Content-Type': 'application / json'
@@ -311,7 +311,7 @@ module.exports = function (context, req) {
                 context.res = {
                     status: 400,
                     body: {
-                        message: 'ES-048'
+                        code: 'ES-048'
                     },
                     headers: {
                         'Content-Type': 'application / json'
