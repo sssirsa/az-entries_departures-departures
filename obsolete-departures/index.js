@@ -488,35 +488,7 @@ module.exports = function (context, req) {
                                         }
                                     });
                                     return;
-                                }
-                                if (docs.estatus_unilever) {
-                                    if (docs.estatus_unilever['code'] === "0008") {
-                                        //Improper unilever status
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-061'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                    if (docs.estatus_unilever['code'] !== "0004") {
-                                        //Improper unilever status
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-029'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                }
+                                }                                
                                 if (docs.nuevo) {
                                     //New fridge
                                     reject({
@@ -766,90 +738,6 @@ module.exports = function (context, req) {
                                 return;
                             }
                             resolve(docs);
-                        });
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function deleteAllControl(fridgesId) {
-            let fridgesIdArray = fridgesId.slice();
-            return new Promise(async function (resolve, reject) {
-                var fridgesControlPromises = [];
-                while (fridgesIdArray.length) {
-                    fridgesControlPromises.push(
-                        deleteControl(
-                            fridgesIdArray.pop()
-                        )
-                    );
-                }
-                try {
-                    let fridgesArray = await Promise.all(fridgesControlPromises);
-                    resolve(fridgesArray);
-                }
-                catch (error) {
-                    reject({
-                        status: 500,
-                        body: error,
-                        headers: {
-                            'Content-Type': 'application / json'
-                        }
-                    });
-                }
-            });
-        }
-        async function deleteControl(fridgeInventoryNumber) {
-            await createEntriesDeparturesClient();
-            return new Promise(function (resolve, reject) {
-                try {
-                    entries_departures_client
-                        .db(ENTRIES_DEPARTURES_DB_NAME)
-                        .collection('Control')
-                        .findOne({ cabinet_id: fridgeInventoryNumber }, function (error, docs) {
-                            if (error) {
-                                reject({
-                                    status: 500,
-                                    body: error,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                                return;
-                            }
-                            if (!docs) {
-                                reject({
-                                    status: 500,
-                                    body: 'No control registry found for the fridge ' + fridgeInventoryNumber,
-                                    headers: {
-                                        'Content-Type': 'application / json'
-                                    }
-                                });
-                            }
-                            if (docs) {
-                                entries_departures_client
-                                    .db(ENTRIES_DEPARTURES_DB_NAME)
-                                    .collection('Control')
-                                    .deleteOne({ _id: mongodb.ObjectId(docs['_id'].toString()) }, function (error) {
-                                        if (error) {
-                                            reject({
-                                                status: 500,
-                                                body: error,
-                                                headers: {
-                                                    'Content-Type': 'application / json'
-                                                }
-                                            });
-                                            return;
-                                        }
-                                        resolve();
-                                    });
-                            }
                         });
                 }
                 catch (error) {
