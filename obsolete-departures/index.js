@@ -474,21 +474,7 @@ module.exports = function (context, req) {
                                         });
                                         return;
                                     }
-                                }
-                                //Unilever status validation
-                                if (!docs.estatus_unilever) {
-                                    //No unilever status
-                                    reject({
-                                        status: 400,
-                                        body: {
-                                            message: 'ES-029'
-                                        },
-                                        headers: {
-                                            'Content-Type': 'application / json'
-                                        }
-                                    });
-                                    return;
-                                }                                
+                                }                      
                                 if (docs.nuevo) {
                                     //New fridge
                                     reject({
