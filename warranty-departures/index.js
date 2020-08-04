@@ -526,22 +526,22 @@ module.exports = function (context, req) {
                                         }
                                     }
                                 }
-                                let validUnileverStatuses = ["0001", "0003", "0007", "0008"];
-                                if (docs.estatus_unilever) {
-                                    if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
-                                        //Improper unilever status
-                                        reject({
-                                            status: 400,
-                                            body: {
-                                                message: 'ES-028'
-                                            },
-                                            headers: {
-                                                'Content-Type': 'application / json'
-                                            }
-                                        });
-                                        return;
-                                    }
-                                }
+                                // let validUnileverStatuses = ["0001", "0003", "0007", "0008"];
+                                // if (docs.estatus_unilever) {
+                                //     if (!validUnileverStatuses.includes(docs.estatus_unilever['code'])) {
+                                //         //Improper unilever status
+                                //         reject({
+                                //             status: 400,
+                                //             body: {
+                                //                 message: 'ES-028'
+                                //             },
+                                //             headers: {
+                                //                 'Content-Type': 'application / json'
+                                //             }
+                                //         });
+                                //         return;
+                                //     }
+                                // }
                                 if (docs.nuevo) {
                                     //New fridge
                                     reject({
