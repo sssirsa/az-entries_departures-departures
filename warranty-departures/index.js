@@ -187,14 +187,7 @@ module.exports = function (context, req) {
             Promise.all(precedentPromises)
                 .then(async function () {
                     let date = new Date();
-                    let departure_kind;
-                    //Determining sub kind of departure
-                    if (destinationSubsidiaryId) {
-                        departure_kind = 'Garantías';
-                    }
-                    if (destinationProviderId) {
-                        departure_kind = 'Garantías proveedor';
-                    }
+                    let departure_kind = 'Garantías';
                     // Create a departure base object.
                     departure = {
                         descripcion: req.body.descripcion,
